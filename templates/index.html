@@ -1,0 +1,769 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Phygitals Marketplace Data Explorer</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .filters {
+            padding: 30px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .filters h3 {
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        .filter-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .filter-group label {
+            font-weight: 600;
+            margin-bottom: 5px;
+            color: #555;
+        }
+
+        .filter-group select,
+        .filter-group input {
+            padding: 10px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        .filter-group select:focus,
+        .filter-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .price-range {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: transform 0.2s;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+        }
+
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            padding: 20px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .stat-label {
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .data-table {
+            padding: 30px;
+        }
+
+        .sort-controls {
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .sort-controls label {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .sort-controls select {
+            padding: 8px 12px;
+            border: 2px solid #e1e5e9;
+            border-radius: 6px;
+            background: white;
+            font-size: 14px;
+            cursor: pointer;
+            transition: border-color 0.3s ease;
+        }
+
+        .sort-controls select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .table-container {
+            overflow-x: auto;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        th {
+            background: #f8f9fa;
+            font-weight: 600;
+            color: #333;
+            position: sticky;
+            top: 0;
+        }
+
+        tr:hover {
+            background: #f8f9fa;
+        }
+
+        .clickable-row {
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .clickable-row:hover {
+            background: #e3f2fd !important;
+        }
+
+        .price {
+            font-weight: bold;
+            color: #28a745;
+        }
+
+        .claw-machine {
+            background: #fff3cd;
+            color: #856404;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+        }
+
+        .human {
+            background: #d1ecf1;
+            color: #0c5460;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+        }
+
+        .modal-content {
+            background: white;
+            margin: 5% auto;
+            padding: 30px;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 1000px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #e9ecef;
+        }
+
+        .close {
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            color: #aaa;
+        }
+
+        .close:hover {
+            color: #000;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 400px;
+            margin: 20px 0;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 50px;
+            color: #666;
+        }
+
+        .no-data {
+            text-align: center;
+            padding: 50px;
+            color: #666;
+            font-style: italic;
+        }
+
+        @media (max-width: 768px) {
+            .filter-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .price-range {
+                flex-direction: column;
+            }
+            
+            .stats {
+                flex-direction: column;
+                gap: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎮 Phygitals Marketplace Explorer</h1>
+            <p>Explore NFT transactions with advanced filtering and price analytics</p>
+        </div>
+
+        <div class="filters">
+            <h3>🔍 Filters</h3>
+            <div class="filter-grid">
+                <div class="filter-group">
+                    <label for="typeFilter">Transaction Type</label>
+                    <select id="typeFilter">
+                        <option value="">All Types</option>
+                    </select>
+                </div>
+                
+                <div class="filter-group">
+                    <label for="clawFilter">Transaction Source</label>
+                    <select id="clawFilter">
+                        <option value="">All Transactions</option>
+                        <option value="Claw Machine">Claw Machine</option>
+                        <option value="human">Human</option>
+                    </select>
+                </div>
+                
+                <div class="filter-group">
+                    <label for="fromFilter">From Address</label>
+                    <select id="fromFilter">
+                        <option value="">All Addresses</option>
+                    </select>
+                </div>
+                
+                <div class="filter-group">
+                    <label for="toFilter">To Address</label>
+                    <select id="toFilter">
+                        <option value="">All Addresses</option>
+                    </select>
+                </div>
+                
+                <div class="filter-group">
+                    <label for="nameFilter">Item Name</label>
+                    <input type="text" id="nameFilter" placeholder="Search by name...">
+                </div>
+                
+                <div class="filter-group">
+                    <label>Price Range ($)</label>
+                    <div class="price-range">
+                        <input type="number" id="minPrice" placeholder="Min" step="0.01">
+                        <span>-</span>
+                        <input type="number" id="maxPrice" placeholder="Max" step="0.01">
+                    </div>
+                </div>
+            </div>
+            
+            <div style="display: flex; gap: 10px; margin-top: 20px;">
+                <button class="btn" onclick="applyFilters()">🔍 Apply Filters</button>
+                <button class="btn btn-secondary" onclick="clearFilters()">🗑️ Clear All</button>
+            </div>
+        </div>
+
+        <div class="stats" id="stats">
+            <div class="stat-item">
+                <div class="stat-number" id="totalItems">-</div>
+                <div class="stat-label">Total Items</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number" id="totalValue">-</div>
+                <div class="stat-label">Total Value ($)</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number" id="avgPrice">-</div>
+                <div class="stat-label">Avg Price ($)</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number" id="clawMachineCount">-</div>
+                <div class="stat-label">Claw Machine Transactions</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number" id="uniqueItems">-</div>
+                <div class="stat-label">Unique Items</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number" id="totalTransactions">-</div>
+                <div class="stat-label">Total Transactions</div>
+            </div>
+        </div>
+
+        <div class="data-table">
+            <div class="sort-controls">
+                <label for="sortBy">Sort by:</label>
+                <select id="sortBy" onchange="sortData()">
+                    <option value="date-desc">Date (Newest First)</option>
+                    <option value="date-asc">Date (Oldest First)</option>
+                    <option value="name-asc">Item Name (A-Z)</option>
+                    <option value="name-desc">Item Name (Z-A)</option>
+                    <option value="price-desc">Price (High to Low)</option>
+                    <option value="price-asc">Price (Low to High)</option>
+                    <option value="transactions-desc">Transaction Count (High to Low)</option>
+                    <option value="transactions-asc">Transaction Count (Low to High)</option>
+                </select>
+            </div>
+            <div class="table-container">
+                <table id="dataTable">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Item Name</th>
+                            <th>Price ($)</th>
+                            <th>Transaction Type</th>
+                            <th>Source</th>
+                            <th>From</th>
+                            <th>To</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody">
+                        <tr>
+                            <td colspan="7" class="loading">Loading data...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Price Chart Modal -->
+    <div id="priceModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">Price History</h2>
+                <span class="close" onclick="closeModal()">&times;</span>
+            </div>
+            <div class="chart-container">
+                <canvas id="priceChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let allData = [];
+        let filteredData = [];
+        let priceChart = null;
+
+        // Load data on page load
+        window.onload = function() {
+            loadData();
+            loadFilters();
+        };
+
+        async function loadData() {
+            try {
+                const response = await fetch('/api/data');
+                allData = await response.json();
+                filteredData = [...allData];
+                updateTable();
+                updateStats();
+            } catch (error) {
+                console.error('Error loading data:', error);
+                document.getElementById('tableBody').innerHTML = '<tr><td colspan="7" class="no-data">Error loading data</td></tr>';
+            }
+        }
+
+        async function loadFilters() {
+            try {
+                const response = await fetch('/api/filters');
+                const filters = await response.json();
+                
+                // Populate transaction types
+                populateSelect('typeFilter', filters.types);
+                
+                // Claw Machine filter is already populated in HTML
+                
+                // Populate address filters (limit to first 100 for performance)
+                populateSelect('fromFilter', filters.from_addresses.slice(0, 100));
+                populateSelect('toFilter', filters.to_addresses.slice(0, 100));
+                
+                console.log('Loaded filters:', {
+                    types: filters.types.length,
+                    from_addresses: filters.from_addresses.length,
+                    to_addresses: filters.to_addresses.length
+                });
+            } catch (error) {
+                console.error('Error loading filters:', error);
+            }
+        }
+
+        function populateSelect(selectId, options) {
+            const select = document.getElementById(selectId);
+            options.forEach(option => {
+                const optionElement = document.createElement('option');
+                optionElement.value = option;
+                optionElement.textContent = option;
+                select.appendChild(optionElement);
+            });
+        }
+
+        function applyFilters() {
+            const type = document.getElementById('typeFilter').value;
+            const clawMachine = document.getElementById('clawFilter').value;
+            const from = document.getElementById('fromFilter').value;
+            const to = document.getElementById('toFilter').value;
+            const name = document.getElementById('nameFilter').value;
+            const minPrice = document.getElementById('minPrice').value;
+            const maxPrice = document.getElementById('maxPrice').value;
+
+            filteredData = allData.filter(item => {
+                if (type && item.type !== type) return false;
+                if (clawMachine && item['Claw Machine'] !== clawMachine) return false;
+                if (from && item.from !== from) return false;
+                if (to && item.to !== to) return false;
+                if (name && !item.name.toLowerCase().includes(name.toLowerCase())) return false;
+                if (minPrice && item.price < parseFloat(minPrice)) return false;
+                if (maxPrice && item.price > parseFloat(maxPrice)) return false;
+                return true;
+            });
+
+            updateTable();
+            updateStats();
+        }
+
+        function clearFilters() {
+            document.getElementById('typeFilter').value = '';
+            document.getElementById('clawFilter').value = '';
+            document.getElementById('fromFilter').value = '';
+            document.getElementById('toFilter').value = '';
+            document.getElementById('nameFilter').value = '';
+            document.getElementById('minPrice').value = '';
+            document.getElementById('maxPrice').value = '';
+            
+            filteredData = [...allData];
+            updateTable();
+            updateStats();
+        }
+
+        function updateTable() {
+            const tbody = document.getElementById('tableBody');
+            
+            if (filteredData.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" class="no-data">No data found</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = filteredData.map(item => `
+                <tr class="clickable-row" onclick="showPriceChart('${item.name.replace(/'/g, "\\'")}')">
+                    <td>${formatDate(item.time)}</td>
+                    <td>${item.name || 'N/A'}</td>
+                    <td class="price">$${item.price || 0}</td>
+                    <td>${item.type || 'N/A'}</td>
+                    <td><span class="${item['Claw Machine'] === 'Claw Machine' ? 'claw-machine' : 'human'}">${item['Claw Machine'] || 'N/A'}</span></td>
+                    <td title="${item.from || 'N/A'}">${truncateAddress(item.from)}</td>
+                    <td title="${item.to || 'N/A'}">${truncateAddress(item.to)}</td>
+                </tr>
+            `).join('');
+        }
+
+        function updateStats() {
+            // Ensure we have valid data
+            if (!Array.isArray(filteredData)) {
+                console.error('filteredData is not an array:', filteredData);
+                return;
+            }
+            
+            const totalItems = parseInt(filteredData.length) || 0;
+            const totalValue = filteredData.reduce((sum, item) => sum + (parseFloat(item.price) || 0), 0);
+            const avgPrice = totalItems > 0 ? totalValue / totalItems : 0;
+            const clawMachineCount = parseInt(filteredData.filter(item => item['Claw Machine'] === 'Claw Machine').length) || 0;
+            
+            // Calculate unique items
+            const uniqueItems = new Set(filteredData.map(item => item.name || 'Unknown')).size;
+            
+            // Total transactions is the same as total items (each row is a transaction)
+            const totalTransactions = totalItems;
+
+            document.getElementById('totalItems').textContent = totalItems.toLocaleString();
+            document.getElementById('totalValue').textContent = totalValue.toLocaleString();
+            document.getElementById('avgPrice').textContent = avgPrice.toFixed(2);
+            document.getElementById('clawMachineCount').textContent = clawMachineCount.toLocaleString();
+            document.getElementById('uniqueItems').textContent = uniqueItems.toLocaleString();
+            document.getElementById('totalTransactions').textContent = totalTransactions.toLocaleString();
+        }
+
+        function sortData() {
+            const sortBy = document.getElementById('sortBy').value;
+            console.log('Sorting by:', sortBy);
+            
+            if (!Array.isArray(filteredData)) {
+                console.error('filteredData is not an array');
+                return;
+            }
+            
+            // Create a copy of the data to avoid modifying the original
+            const sortedData = [...filteredData];
+            
+            switch(sortBy) {
+                case 'date-desc':
+                    sortedData.sort((a, b) => new Date(b.time) - new Date(a.time));
+                    break;
+                case 'date-asc':
+                    sortedData.sort((a, b) => new Date(a.time) - new Date(b.time));
+                    break;
+                case 'name-asc':
+                    sortedData.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+                    break;
+                case 'name-desc':
+                    sortedData.sort((a, b) => (b.name || '').localeCompare(a.name || ''));
+                    break;
+                case 'price-desc':
+                    sortedData.sort((a, b) => (parseFloat(b.price) || 0) - (parseFloat(a.price) || 0));
+                    break;
+                case 'price-asc':
+                    sortedData.sort((a, b) => (parseFloat(a.price) || 0) - (parseFloat(b.price) || 0));
+                    break;
+                case 'transactions-desc':
+                    // Count transactions per item name
+                    const transactionCounts = {};
+                    sortedData.forEach(item => {
+                        const name = item.name || 'Unknown';
+                        transactionCounts[name] = (transactionCounts[name] || 0) + 1;
+                    });
+                    sortedData.sort((a, b) => {
+                        const countA = transactionCounts[a.name || 'Unknown'] || 0;
+                        const countB = transactionCounts[b.name || 'Unknown'] || 0;
+                        return countB - countA;
+                    });
+                    break;
+                case 'transactions-asc':
+                    // Count transactions per item name
+                    const transactionCountsAsc = {};
+                    sortedData.forEach(item => {
+                        const name = item.name || 'Unknown';
+                        transactionCountsAsc[name] = (transactionCountsAsc[name] || 0) + 1;
+                    });
+                    sortedData.sort((a, b) => {
+                        const countA = transactionCountsAsc[a.name || 'Unknown'] || 0;
+                        const countB = transactionCountsAsc[b.name || 'Unknown'] || 0;
+                        return countA - countB;
+                    });
+                    break;
+                default:
+                    console.log('Unknown sort option:', sortBy);
+                    return;
+            }
+            
+            // Update the filteredData with sorted data
+            filteredData = sortedData;
+            
+            // Update the table and stats
+            updateTable();
+            updateStats();
+            
+            console.log('Data sorted successfully');
+        }
+
+        function formatDate(timeString) {
+            if (!timeString) return 'N/A';
+            const date = new Date(timeString);
+            return date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+        }
+
+        function truncateAddress(address) {
+            if (!address) return 'N/A';
+            return address.length > 20 ? address.substring(0, 10) + '...' + address.substring(address.length - 10) : address;
+        }
+
+        async function showPriceChart(itemName) {
+            try {
+                const response = await fetch(`/api/price_history/${encodeURIComponent(itemName)}`);
+                const history = await response.json();
+                
+                if (history.length === 0) {
+                    alert('No price history found for this item');
+                    return;
+                }
+
+                document.getElementById('modalTitle').textContent = `Price History: ${itemName}`;
+                document.getElementById('priceModal').style.display = 'block';
+                
+                // Destroy existing chart
+                if (priceChart) {
+                    priceChart.destroy();
+                }
+
+                // Create new chart
+                const ctx = document.getElementById('priceChart').getContext('2d');
+                priceChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: history.map(h => h.date),
+                        datasets: [{
+                            label: 'Price ($)',
+                            data: history.map(h => h.price),
+                            borderColor: '#667eea',
+                            backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                            borderWidth: 2,
+                            fill: true,
+                            tension: 0.4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                title: {
+                                    display: true,
+                                    text: 'Price ($)'
+                                }
+                            },
+                            x: {
+                                title: {
+                                    display: true,
+                                    text: 'Date'
+                                }
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                display: true
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    afterLabel: function(context) {
+                                        const dataIndex = context.dataIndex;
+                                        const item = history[dataIndex];
+                                        return [
+                                            `Type: ${item.type}`,
+                                            `From: ${truncateAddress(item.from)}`,
+                                            `To: ${truncateAddress(item.to)}`,
+                                            `Claw Machine: ${item.claw_machine}`
+                                        ];
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            } catch (error) {
+                console.error('Error loading price history:', error);
+                alert('Error loading price history');
+            }
+        }
+
+        function closeModal() {
+            document.getElementById('priceModal').style.display = 'none';
+            if (priceChart) {
+                priceChart.destroy();
+                priceChart = null;
+            }
+        }
+
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const modal = document.getElementById('priceModal');
+            if (event.target === modal) {
+                closeModal();
+            }
+        }
+    </script>
+</body>
+</html>

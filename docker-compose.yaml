@@ -1,0 +1,55 @@
+version: "3.8"
+
+services:
+  database:
+    image: mysql:8.0
+    container_name: phygitals-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: my-secret-pw
+      MYSQL_DATABASE: scraped_data
+      MYSQL_USER: scraper
+      MYSQL_PASSWORD: scraper-pw
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    restart: unless-stopped
+    command: --default-authentication-plugin=mysql_native_password
+
+  scraper:
+    build:
+      context: .
+      dockerfile: Dockerfile.scraper
+    container_name: phygitals-scraper
+    depends_on:
+      - database
+    environment:
+      MYSQL_HOST: database
+      MYSQL_PORT: 3306
+      MYSQL_USER: root
+      MYSQL_PASSWORD: my-secret-pw
+      MYSQL_DATABASE: scraped_data
+    volumes:
+      - ./data:/app/data
+    restart: "no"
+
+  webapp:
+    build:
+      context: .
+      dockerfile: Dockerfile.webapp
+    container_name: phygitals-webapp
+    depends_on:
+      - database
+    environment:
+      MYSQL_HOST: database
+      MYSQL_PORT: 3306
+      MYSQL_USER: root
+      MYSQL_PASSWORD: my-secret-pw
+      MYSQL_DATABASE: scraped_data
+    ports:
+      - "5001:5001"
+    restart: unless-stopped
+
+volumes:
+  mysql_data:
