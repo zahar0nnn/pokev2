@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Phygitals Marketplace Data Explorer</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
         * {
             margin: 0;
@@ -13,47 +14,99 @@
         }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 50%, #1a1a1a 100%);
+            background-size: 400% 400%;
+            animation: gradientShift 15s ease infinite;
+            color: white;
             min-height: 100vh;
             padding: 20px;
+        }
+
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
         }
 
         .container {
             max-width: 1400px;
             margin: 0 auto;
-            background: white;
-            border-radius: 15px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 13px;
+            box-shadow: 0 16px 32px rgba(0, 0, 0, 0.3);
             overflow: hidden;
+            position: relative;
+        }
+
+        .container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            border: 2px solid transparent;
+            border-radius: 13px;
+            background: linear-gradient(90deg, #00d4ff, #ff6b6b, #4ecdc4, #45b7d1);
+            background-size: 300% 100%;
+            animation: borderFlow 8s ease infinite;
+            -webkit-mask: 
+                linear-gradient(#fff 0 0) content-box, 
+                linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            z-index: -1;
+        }
+
+        @keyframes borderFlow {
+            0% { background-position: 0% 0%; }
+            100% { background-position: 300% 0%; }
         }
 
         .header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(20px);
             color: white;
             padding: 30px;
             text-align: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
         }
 
         .header h1 {
+            font-family: 'JetBrains Mono', monospace;
             font-size: 2.5rem;
+            font-weight: 700;
             margin-bottom: 10px;
+            background: linear-gradient(135deg, #ffffff, #e0e0e0);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-shadow: 0 0 19px rgba(255, 255, 255, 0.3);
         }
 
         .header p {
             font-size: 1.1rem;
             opacity: 0.9;
+            color: #e0e0e0;
         }
 
         .filters {
             padding: 30px;
-            background: #f8f9fa;
-            border-bottom: 1px solid #e9ecef;
+            background: rgba(255, 255, 255, 0.03);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
         }
 
         .filters h3 {
+            font-family: 'JetBrains Mono', monospace;
             margin-bottom: 20px;
-            color: #333;
+            color: #ffffff;
+            font-size: 1.2rem;
+            font-weight: 700;
+            border-bottom: 2px solid rgba(255, 255, 255, 0.2);
+            padding-bottom: 6px;
         }
 
         .filter-grid {
@@ -69,24 +122,48 @@
         }
 
         .filter-group label {
+            font-family: 'JetBrains Mono', monospace;
             font-weight: 600;
-            margin-bottom: 5px;
-            color: #555;
+            margin-bottom: 8px;
+            color: #e0e0e0;
+            font-size: 0.8rem;
+            letter-spacing: 0.3px;
         }
 
         .filter-group select,
         .filter-group input {
-            padding: 10px;
-            border: 2px solid #e9ecef;
+            font-family: 'JetBrains Mono', monospace;
+            padding: 10px 13px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.2);
             border-radius: 8px;
-            font-size: 14px;
-            transition: border-color 0.3s;
+            color: #ffffff;
+            font-size: 0.8rem;
+            transition: all 0.3s ease;
+            outline: none;
+        }
+
+        .filter-group select option {
+            background: #1a1a1a;
+            color: #ffffff;
+            padding: 8px;
+        }
+
+        .filter-group select option:hover {
+            background: rgba(0, 212, 255, 0.2);
         }
 
         .filter-group select:focus,
         .filter-group input:focus {
-            outline: none;
-            border-color: #667eea;
+            border-color: #00d4ff;
+            box-shadow: 0 0 13px rgba(0, 212, 255, 0.3);
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .filter-group select:hover,
+        .filter-group input:hover {
+            border-color: rgba(255, 255, 255, 0.4);
+            background: rgba(255, 255, 255, 0.12);
         }
 
         .price-range {
@@ -96,50 +173,73 @@
         }
 
         .btn {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: 'JetBrains Mono', monospace;
+            background: rgba(0, 212, 255, 0.1);
             color: white;
-            border: none;
-            padding: 12px 24px;
+            border: 2px solid #00d4ff;
+            padding: 10px 20px;
             border-radius: 8px;
             cursor: pointer;
-            font-size: 16px;
+            font-size: 0.8rem;
             font-weight: 600;
-            transition: transform 0.2s;
+            transition: all 0.3s ease;
         }
 
         .btn:hover {
-            transform: translateY(-2px);
+            background: rgba(0, 212, 255, 0.2);
+            box-shadow: 0 0 13px rgba(0, 212, 255, 0.3);
+            transform: translateY(-1px);
         }
 
         .btn-secondary {
-            background: #6c757d;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.15);
+            border-color: rgba(255, 255, 255, 0.5);
         }
 
         .stats {
             display: flex;
             justify-content: space-around;
             padding: 20px;
-            background: #f8f9fa;
-            border-bottom: 1px solid #e9ecef;
+            background: rgba(255, 255, 255, 0.03);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            flex-wrap: wrap;
+            gap: 20px;
         }
 
         .stat-item {
             text-align: center;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            min-width: 120px;
         }
 
         .stat-number {
-            font-size: 2rem;
-            font-weight: bold;
-            color: #667eea;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #00d4ff;
+            text-shadow: 0 0 6px rgba(0, 212, 255, 0.5);
+            margin-bottom: 5px;
         }
 
         .stat-label {
-            color: #666;
-            font-size: 0.9rem;
+            font-family: 'JetBrains Mono', monospace;
+            color: #e0e0e0;
+            font-size: 0.8rem;
+            font-weight: 600;
+            letter-spacing: 0.3px;
         }
 
         .data-table {
             padding: 30px;
+            background: rgba(255, 255, 255, 0.02);
         }
 
         .sort-controls {
@@ -150,53 +250,74 @@
         }
 
         .sort-controls label {
+            font-family: 'JetBrains Mono', monospace;
             font-weight: 600;
-            color: #333;
+            color: #e0e0e0;
+            font-size: 0.9rem;
         }
 
         .sort-controls select {
+            font-family: 'JetBrains Mono', monospace;
             padding: 8px 12px;
-            border: 2px solid #e1e5e9;
-            border-radius: 6px;
-            background: white;
-            font-size: 14px;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-size: 0.8rem;
             cursor: pointer;
-            transition: border-color 0.3s ease;
+            transition: all 0.3s ease;
+        }
+
+        .sort-controls select option {
+            background: #1a1a1a;
+            color: #ffffff;
+            padding: 8px;
+        }
+
+        .sort-controls select option:hover {
+            background: rgba(0, 212, 255, 0.2);
         }
 
         .sort-controls select:focus {
             outline: none;
-            border-color: #667eea;
+            border-color: #00d4ff;
+            box-shadow: 0 0 13px rgba(0, 212, 255, 0.3);
         }
 
         .table-container {
             overflow-x: auto;
             border-radius: 8px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(20px);
         }
 
         table {
             width: 100%;
             border-collapse: collapse;
-            background: white;
+            background: transparent;
         }
 
         th, td {
             padding: 12px;
             text-align: left;
-            border-bottom: 1px solid #e9ecef;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            color: white;
         }
 
         th {
-            background: #f8f9fa;
-            font-weight: 600;
-            color: #333;
+            font-family: 'JetBrains Mono', monospace;
+            background: rgba(255, 255, 255, 0.1);
+            font-weight: 700;
+            color: #ffffff;
             position: sticky;
             top: 0;
+            font-size: 0.9rem;
+            letter-spacing: 0.3px;
         }
 
         tr:hover {
-            background: #f8f9fa;
+            background: rgba(255, 255, 255, 0.05);
         }
 
         .clickable-row {
@@ -205,25 +326,27 @@
         }
 
         .clickable-row:hover {
-            background: #e3f2fd !important;
+            background: rgba(0, 212, 255, 0.1) !important;
         }
 
         .price {
-            font-weight: bold;
-            color: #28a745;
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 700;
+            color: #00d4ff;
+            text-shadow: 0 0 6px rgba(0, 212, 255, 0.5);
         }
 
         .claw-machine {
-            background: #fff3cd;
-            color: #856404;
+            background: rgba(0, 212, 255, 0.2);
+            color: #00d4ff;
             padding: 4px 8px;
             border-radius: 4px;
             font-size: 0.8rem;
         }
 
         .human {
-            background: #d1ecf1;
-            color: #0c5460;
+            background: rgba(255, 255, 255, 0.1);
+            color: #e0e0e0;
             padding: 4px 8px;
             border-radius: 4px;
             font-size: 0.8rem;
@@ -237,18 +360,22 @@
             top: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0,0,0,0.5);
+            background: rgba(0,0,0,0.8);
+            backdrop-filter: blur(10px);
         }
 
         .modal-content {
-            background: white;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
             margin: 5% auto;
             padding: 30px;
-            border-radius: 15px;
+            border-radius: 13px;
             width: 90%;
             max-width: 1000px;
             max-height: 80vh;
             overflow-y: auto;
+            color: white;
         }
 
         .modal-header {
@@ -290,6 +417,70 @@
             font-style: italic;
         }
 
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #e0e0e0;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .no-data {
+            text-align: center;
+            padding: 40px;
+            color: #888;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .close {
+            color: #e0e0e0;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: color 0.3s ease;
+        }
+
+        .close:hover {
+            color: #00d4ff;
+        }
+
+        .close:focus {
+            color: #00d4ff;
+        }
+
+        /* Additional animations */
+        .container {
+            animation: fadeInUp 0.8s ease-out;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Scrollbar styling */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(0, 212, 255, 0.3);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(0, 212, 255, 0.5);
+        }
+
         @media (max-width: 768px) {
             .filter-grid {
                 grid-template-columns: 1fr;
@@ -302,6 +493,14 @@
             .stats {
                 flex-direction: column;
                 gap: 20px;
+            }
+
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .stat-item {
+                min-width: 100px;
             }
         }
     </style>
@@ -349,6 +548,16 @@
                 <div class="filter-group">
                     <label for="nameFilter">Item Name</label>
                     <input type="text" id="nameFilter" placeholder="Search by name...">
+                </div>
+                
+                <div class="filter-group">
+                    <label for="fromAddressFilter">From Address</label>
+                    <input type="text" id="fromAddressFilter" placeholder="Filter by from address...">
+                </div>
+                
+                <div class="filter-group">
+                    <label for="toAddressFilter">To Address</label>
+                    <input type="text" id="toAddressFilter" placeholder="Filter by to address...">
                 </div>
                 
                 <div class="filter-group">
@@ -438,6 +647,127 @@
                 <h2 id="modalTitle">Price History</h2>
                 <span class="close" onclick="closeModal()">&times;</span>
             </div>
+            
+            <!-- Filter Controls -->
+            <div class="filter-controls" style="padding: 15px; border-bottom: 1px solid rgba(255,255,255,0.1);">
+                <div style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap; margin-bottom: 15px;">
+                    <label style="display: flex; align-items: center; gap: 8px; color: #ccc;">
+                        <input type="checkbox" id="excludeIncomplete" checked style="transform: scale(1.2);">
+                        <span>Exclude incomplete records</span>
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 8px; color: #ccc;">
+                        <input type="checkbox" id="showStats" style="transform: scale(1.2);">
+                        <span>Show statistics</span>
+                    </label>
+                    <button onclick="refreshPriceChart()" style="
+                        background: linear-gradient(45deg, #667eea 0%, #764ba2 100%);
+                        color: white;
+                        border: none;
+                        padding: 8px 16px;
+                        border-radius: 6px;
+                        cursor: pointer;
+                        font-size: 14px;
+                        transition: all 0.3s ease;
+                    " onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+                        🔄 Refresh Chart
+                    </button>
+                </div>
+                
+                <!-- Transaction Filters -->
+                <div style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap; margin-bottom: 15px;">
+                    <div style="display: flex; flex-direction: column; gap: 5px;">
+                        <label style="color: #ccc; font-size: 12px; font-weight: 600;">Transaction Type:</label>
+                        <select id="modalTransactionType" style="
+                            padding: 8px 12px;
+                            background: rgba(255, 255, 255, 0.1);
+                            border: 1px solid rgba(255, 255, 255, 0.2);
+                            border-radius: 6px;
+                            color: white;
+                            font-size: 12px;
+                            width: 200px;
+                        ">
+                            <option value="">All Types</option>
+                        </select>
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 5px;">
+                        <label style="color: #ccc; font-size: 12px; font-weight: 600;">Transaction Source:</label>
+                        <select id="modalTransactionSource" style="
+                            padding: 8px 12px;
+                            background: rgba(255, 255, 255, 0.1);
+                            border: 1px solid rgba(255, 255, 255, 0.2);
+                            border-radius: 6px;
+                            color: white;
+                            font-size: 12px;
+                            width: 200px;
+                        ">
+                            <option value="">All Sources</option>
+                            <option value="Claw Machine">Claw Machine</option>
+                            <option value="human">Human</option>
+                        </select>
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 5px;">
+                        <label style="color: #ccc; font-size: 12px; font-weight: 600;">From Address:</label>
+                        <select id="modalFromAddress" style="
+                            padding: 8px 12px;
+                            background: rgba(255, 255, 255, 0.1);
+                            border: 1px solid rgba(255, 255, 255, 0.2);
+                            border-radius: 6px;
+                            color: white;
+                            font-size: 12px;
+                            width: 300px;
+                        ">
+                            <option value="">All From Addresses</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <!-- Address Filter Controls -->
+                <div style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap; margin-bottom: 10px;">
+                    <div style="display: flex; flex-direction: column; gap: 5px;">
+                        <label style="color: #ccc; font-size: 12px; font-weight: 600;">Exclude From Address:</label>
+                        <input type="text" id="excludeFromAddress" placeholder="Enter wallet address to exclude..." 
+                               style="
+                                   padding: 8px 12px;
+                                   background: rgba(255, 255, 255, 0.1);
+                                   border: 1px solid rgba(255, 255, 255, 0.2);
+                                   border-radius: 6px;
+                                   color: white;
+                                   font-size: 12px;
+                                   width: 300px;
+                               ">
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 5px;">
+                        <label style="color: #ccc; font-size: 12px; font-weight: 600;">Exclude To Address:</label>
+                        <input type="text" id="excludeToAddress" placeholder="Enter wallet address to exclude..." 
+                               style="
+                                   padding: 8px 12px;
+                                   background: rgba(255, 255, 255, 0.1);
+                                   border: 1px solid rgba(255, 255, 255, 0.2);
+                                   border-radius: 6px;
+                                   color: white;
+                                   font-size: 12px;
+                                   width: 300px;
+                               ">
+                    </div>
+                    <button onclick="clearAddressFilters()" style="
+                        background: rgba(255, 107, 107, 0.2);
+                        color: #ff6b6b;
+                        border: 1px solid #ff6b6b;
+                        padding: 8px 12px;
+                        border-radius: 6px;
+                        cursor: pointer;
+                        font-size: 12px;
+                        transition: all 0.3s ease;
+                    " onmouseover="this.style.background='rgba(255, 107, 107, 0.3)'" onmouseout="this.style.background='rgba(255, 107, 107, 0.2)'">
+                        🗑️ Clear Address Filters
+                    </button>
+                </div>
+                
+                <div id="chartStats" style="margin-top: 10px; font-size: 14px; color: #888; display: none;">
+                    <!-- Statistics will be displayed here -->
+                </div>
+            </div>
+            
             <div class="chart-container">
                 <canvas id="priceChart"></canvas>
             </div>
@@ -508,6 +838,8 @@
             const from = document.getElementById('fromFilter').value;
             const to = document.getElementById('toFilter').value;
             const name = document.getElementById('nameFilter').value;
+            const fromAddress = document.getElementById('fromAddressFilter').value;
+            const toAddress = document.getElementById('toAddressFilter').value;
             const minPrice = document.getElementById('minPrice').value;
             const maxPrice = document.getElementById('maxPrice').value;
 
@@ -517,6 +849,8 @@
                 if (from && item.from !== from) return false;
                 if (to && item.to !== to) return false;
                 if (name && !item.name.toLowerCase().includes(name.toLowerCase())) return false;
+                if (fromAddress && !item.from.toLowerCase().includes(fromAddress.toLowerCase())) return false;
+                if (toAddress && !item.to.toLowerCase().includes(toAddress.toLowerCase())) return false;
                 if (minPrice && item.price < parseFloat(minPrice)) return false;
                 if (maxPrice && item.price > parseFloat(maxPrice)) return false;
                 return true;
@@ -532,6 +866,8 @@
             document.getElementById('fromFilter').value = '';
             document.getElementById('toFilter').value = '';
             document.getElementById('nameFilter').value = '';
+            document.getElementById('fromAddressFilter').value = '';
+            document.getElementById('toAddressFilter').value = '';
             document.getElementById('minPrice').value = '';
             document.getElementById('maxPrice').value = '';
             
@@ -552,7 +888,7 @@
                 <tr class="clickable-row" onclick="showPriceChart('${item.name.replace(/'/g, "\\'")}')">
                     <td>${formatDate(item.time)}</td>
                     <td>${item.name || 'N/A'}</td>
-                    <td class="price">$${item.price || 0}</td>
+                    <td class="price">$${item.price !== null && item.price !== undefined ? item.price : 0}</td>
                     <td>${item.type || 'N/A'}</td>
                     <td><span class="${item['Claw Machine'] === 'Claw Machine' ? 'claw-machine' : 'human'}">${item['Claw Machine'] || 'N/A'}</span></td>
                     <td title="${item.from || 'N/A'}">${truncateAddress(item.from)}</td>
@@ -670,18 +1006,136 @@
             return address.length > 20 ? address.substring(0, 10) + '...' + address.substring(address.length - 10) : address;
         }
 
+        let currentItemName = null;
+
         async function showPriceChart(itemName) {
+            currentItemName = itemName;
+            
+            // Find the correct truncated name from the database
+            const response = await fetch('/api/data');
+            const allData = await response.json();
+            const matchingItem = allData.find(item => 
+                item.name && item.name.includes(itemName.substring(0, 30)) // Match first 30 chars
+            );
+            
+            const actualItemName = matchingItem ? matchingItem.name : itemName;
+            currentItemName = actualItemName;
+            
+            // Populate modal filters with data for this specific item
+            await populateModalFilters(actualItemName);
+            
+            await loadPriceChart(actualItemName);
+            document.getElementById('modalTitle').textContent = `Price History: ${itemName}`;
+            document.getElementById('priceModal').style.display = 'block';
+        }
+
+        async function populateModalFilters(itemName) {
             try {
-                const response = await fetch(`/api/price_history/${encodeURIComponent(itemName)}`);
-                const history = await response.json();
+                // Get all transactions for this item to populate filters
+                const response = await fetch('/api/data');
+                const allData = await response.json();
+                
+                // Filter data for this specific item
+                const itemData = allData.filter(item => item.name === itemName);
+                
+                // Get unique transaction types for this item
+                const uniqueTypes = [...new Set(itemData.map(item => item.type).filter(type => type))];
+                const typeSelect = document.getElementById('modalTransactionType');
+                typeSelect.innerHTML = '<option value="">All Types</option>';
+                uniqueTypes.forEach(type => {
+                    const option = document.createElement('option');
+                    option.value = type;
+                    option.textContent = type;
+                    typeSelect.appendChild(option);
+                });
+                
+                // Get unique from addresses for this item
+                const uniqueFromAddresses = [...new Set(itemData.map(item => item.from).filter(addr => addr))];
+                const fromSelect = document.getElementById('modalFromAddress');
+                fromSelect.innerHTML = '<option value="">All From Addresses</option>';
+                uniqueFromAddresses.forEach(addr => {
+                    const option = document.createElement('option');
+                    option.value = addr;
+                    option.textContent = addr.length > 30 ? addr.substring(0, 30) + '...' : addr;
+                    fromSelect.appendChild(option);
+                });
+                
+            } catch (error) {
+                console.error('Error populating modal filters:', error);
+            }
+        }
+
+        async function loadPriceChart(itemName) {
+            try {
+                // Get filter settings
+                const excludeIncomplete = document.getElementById('excludeIncomplete').checked;
+                const showStats = document.getElementById('showStats').checked;
+                
+                // Get current filter values from the main table filters and modal filters
+                const currentFilters = {
+                    exclude_incomplete: excludeIncomplete,
+                    show_stats: showStats,
+                    type: document.getElementById('typeFilter').value,
+                    claw_machine: document.getElementById('clawFilter').value,
+                    from: document.getElementById('fromFilter').value,
+                    to: document.getElementById('toFilter').value,
+                    min_price: document.getElementById('minPrice').value,
+                    max_price: document.getElementById('maxPrice').value,
+                    exclude_from_address: document.getElementById('excludeFromAddress').value,
+                    exclude_to_address: document.getElementById('excludeToAddress').value,
+                    modal_transaction_source: document.getElementById('modalTransactionSource').value,
+                    modal_transaction_type: document.getElementById('modalTransactionType').value,
+                    modal_from_address: document.getElementById('modalFromAddress').value
+                };
+                
+                // Build URL with parameters, only including non-empty values
+                const params = new URLSearchParams();
+                Object.entries(currentFilters).forEach(([key, value]) => {
+                    if (value && value !== '') {
+                        params.append(key, value);
+                    }
+                });
+                
+                const response = await fetch(`/api/price_history/${encodeURIComponent(itemName)}?${params}`);
+                const data = await response.json();
+                
+                // Handle both old format (array) and new format (object with stats)
+                let history, stats;
+                if (Array.isArray(data)) {
+                    history = data;
+                    stats = null;
+                } else {
+                    history = data.history;
+                    stats = data.stats;
+                }
                 
                 if (history.length === 0) {
-                    alert('No price history found for this item');
+                    // Check if the item exists but has no valid price data
+                    const itemExists = allData.some(item => item.name === itemName);
+                    if (itemExists) {
+                        alert('This item exists but has no valid price data (all prices are zero or missing)');
+                    } else {
+                        alert('No price history found for this item');
+                    }
                     return;
                 }
 
-                document.getElementById('modalTitle').textContent = `Price History: ${itemName}`;
-                document.getElementById('priceModal').style.display = 'block';
+                // Show/hide statistics
+                const statsDiv = document.getElementById('chartStats');
+                if (stats && showStats) {
+                    statsDiv.style.display = 'block';
+                    statsDiv.innerHTML = `
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px;">
+                            <div>📊 Total Records: <strong>${stats.total_records.toLocaleString()}</strong></div>
+                            <div>✅ Complete Records: <strong>${stats.complete_records.toLocaleString()}</strong></div>
+                            <div>❌ Incomplete Records: <strong>${stats.incomplete_records.toLocaleString()}</strong></div>
+                            <div>📈 Chart Records: <strong>${stats.filtered_records.toLocaleString()}</strong></div>
+                            <div>🚫 Excluded Records: <strong>${stats.excluded_records.toLocaleString()}</strong></div>
+                        </div>
+                    `;
+                } else {
+                    statsDiv.style.display = 'none';
+                }
                 
                 // Destroy existing chart
                 if (priceChart) {
@@ -701,7 +1155,11 @@
                             backgroundColor: 'rgba(102, 126, 234, 0.1)',
                             borderWidth: 2,
                             fill: true,
-                            tension: 0.4
+                            tension: 0.4,
+                            pointBackgroundColor: history.map(h => h.is_complete ? '#667eea' : '#ff6b6b'),
+                            pointBorderColor: history.map(h => h.is_complete ? '#667eea' : '#ff6b6b'),
+                            pointRadius: 4,
+                            pointHoverRadius: 6
                         }]
                     },
                     options: {
@@ -731,12 +1189,17 @@
                                     afterLabel: function(context) {
                                         const dataIndex = context.dataIndex;
                                         const item = history[dataIndex];
-                                        return [
+                                        let tooltip = [
                                             `Type: ${item.type}`,
+                                            `Amount: ${item.amount}`,
                                             `From: ${truncateAddress(item.from)}`,
                                             `To: ${truncateAddress(item.to)}`,
-                                            `Claw Machine: ${item.claw_machine}`
+                                            `Transaction Type: ${item.claw_machine}`
                                         ];
+                                        if (!item.is_complete) {
+                                            tooltip.push('⚠️ Incomplete record');
+                                        }
+                                        return tooltip;
                                     }
                                 }
                             }
@@ -746,6 +1209,23 @@
             } catch (error) {
                 console.error('Error loading price history:', error);
                 alert('Error loading price history');
+            }
+        }
+
+        function refreshPriceChart() {
+            if (currentItemName) {
+                loadPriceChart(currentItemName);
+            }
+        }
+
+        function clearAddressFilters() {
+            document.getElementById('excludeFromAddress').value = '';
+            document.getElementById('excludeToAddress').value = '';
+            document.getElementById('modalTransactionSource').value = '';
+            document.getElementById('modalTransactionType').value = '';
+            document.getElementById('modalFromAddress').value = '';
+            if (currentItemName) {
+                loadPriceChart(currentItemName);
             }
         }
 
@@ -764,6 +1244,29 @@
                 closeModal();
             }
         }
+
+        // Add event listeners for modal filters to auto-refresh chart
+        document.addEventListener('DOMContentLoaded', function() {
+            // Add event listeners for modal filter changes
+            const modalFilters = [
+                'modalTransactionType',
+                'modalTransactionSource', 
+                'modalFromAddress',
+                'excludeFromAddress',
+                'excludeToAddress'
+            ];
+            
+            modalFilters.forEach(filterId => {
+                const element = document.getElementById(filterId);
+                if (element) {
+                    element.addEventListener('change', function() {
+                        if (currentItemName) {
+                            loadPriceChart(currentItemName);
+                        }
+                    });
+                }
+            });
+        });
     </script>
 </body>
 </html>

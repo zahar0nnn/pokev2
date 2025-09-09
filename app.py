@@ -32,13 +32,70 @@ def get_unique_values(field):
             unique_values.add(item[field])
     return sorted(list(unique_values))
 
-def get_price_history(item_name):
-    """Get price history for a specific item"""
+def get_price_history(item_name, exclude_incomplete=True, filters=None):
+    """Get price history for a specific item with optional filtering"""
     data = load_data()
     history = []
     
+    # Default empty filters if none provided
+    if filters is None:
+        filters = {}
+    
     for item in data:
-        if item.get('name') == item_name and item.get('price'):
+        if item.get('name') == item_name and item.get('price') is not None:
+            # Apply additional filters to match main table filtering
+            if filters:
+                # Filter by transaction type
+                if 'type' in filters and item.get('type') != filters['type']:
+                    continue
+                
+                # Filter by claw machine type
+                if 'claw_machine' in filters and item.get('Claw Machine') != filters['claw_machine']:
+                    continue
+                
+                # Filter by from address
+                if 'from_address' in filters and item.get('from') != filters['from_address']:
+                    continue
+                
+                # Filter by to address
+                if 'to_address' in filters and item.get('to') != filters['to_address']:
+                    continue
+                
+                # Filter by price range
+                if 'min_price' in filters and item.get('price', 0) < float(filters['min_price']):
+                    continue
+                
+                if 'max_price' in filters and item.get('price', 0) > float(filters['max_price']):
+                    continue
+                
+                # Exclude specific addresses
+                if 'exclude_from_address' in filters and item.get('from') == filters['exclude_from_address']:
+                    continue
+                
+                if 'exclude_to_address' in filters and item.get('to') == filters['exclude_to_address']:
+                    continue
+                
+                # Filter by modal transaction source (overrides main table claw_machine filter)
+                if 'modal_transaction_source' in filters and item.get('Claw Machine') != filters['modal_transaction_source']:
+                    continue
+                
+                # Filter by modal transaction type (overrides main table type filter)
+                if 'modal_transaction_type' in filters and item.get('type') != filters['modal_transaction_type']:
+                    continue
+                
+                # Filter by modal from address (overrides main table from_address filter)
+                if 'modal_from_address' in filters and item.get('from') != filters['modal_from_address']:
+                    continue
+            
+            # Check if we should exclude incomplete records
+            if exclude_incomplete:
+                # Skip records with missing essential fields
+                if (not item.get('time') or 
+                    not item.get('amount') or 
+                    not item.get('type') or 
+                    not item.get('name')):
+                    continue
+            
             try:
                 # Parse time to get date
                 time_str = item.get('time', '')
@@ -53,7 +110,8 @@ def get_price_history(item_name):
                         'type': item.get('type', ''),
                         'from': item.get('from', ''),
                         'to': item.get('to', ''),
-                        'claw_machine': item.get('Claw Machine', '')
+                        'claw_machine': item.get('Claw Machine', ''),
+                        'is_complete': bool(item.get('time') and item.get('amount') and item.get('type') and item.get('name'))
                     })
             except Exception as e:
                 print(f"Error parsing time for item {item_name}: {e}")
@@ -107,8 +165,48 @@ def api_filters():
 
 @app.route('/api/price_history/<item_name>')
 def api_price_history(item_name):
-    """API endpoint to get price history for a specific item"""
-    history = get_price_history(item_name)
+    """API endpoint to get price history for a specific item with filtering options"""
+    # Get filter parameters
+    exclude_incomplete = request.args.get('exclude_incomplete', 'true').lower() == 'true'
+    show_stats = request.args.get('show_stats', 'false').lower() == 'true'
+    
+    # Get additional filter parameters to match main table filtering
+    filters = {
+        'type': request.args.get('type', ''),
+        'claw_machine': request.args.get('claw_machine', ''),
+        'from_address': request.args.get('from', ''),
+        'to_address': request.args.get('to', ''),
+        'min_price': request.args.get('min_price', ''),
+        'max_price': request.args.get('max_price', ''),
+        'exclude_from_address': request.args.get('exclude_from_address', ''),
+        'exclude_to_address': request.args.get('exclude_to_address', ''),
+        'modal_transaction_source': request.args.get('modal_transaction_source', ''),
+        'modal_transaction_type': request.args.get('modal_transaction_type', ''),
+        'modal_from_address': request.args.get('modal_from_address', '')
+    }
+    
+    # Remove empty filters
+    filters = {k: v for k, v in filters.items() if v}
+    
+    history = get_price_history(item_name, exclude_incomplete, filters)
+    
+    if show_stats:
+        # Calculate statistics
+        total_records = len(load_data())
+        complete_records = len([item for item in load_data() if item.get('name') == item_name and item.get('time') and item.get('amount') and item.get('type') and item.get('name')])
+        incomplete_records = total_records - complete_records
+        
+        return jsonify({
+            'history': history,
+            'stats': {
+                'total_records': total_records,
+                'complete_records': complete_records,
+                'incomplete_records': incomplete_records,
+                'filtered_records': len(history),
+                'excluded_records': complete_records - len(history) if exclude_incomplete else 0
+            }
+        })
+    
     return jsonify(history)
 
 @app.route('/api/search')
@@ -137,4 +235,4 @@ def api_search():
     return jsonify(filtered_data)
 
 if __name__ == '__main__':
-    app.run(debug=True, host='127.0.0.1', port=5001)
+    app.run(debug=True, host='0.0.0.0', port=5001)
