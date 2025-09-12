@@ -375,60 +375,6 @@ class DatabaseConfig:
                 cursor.close()
                 connection.close()
     
-    def get_transactions_paginated(self, page=1, per_page=50, sort_by='date-desc'):
-        """Get paginated transactions from database with sorting"""
-        connection = self.get_connection()
-        if not connection:
-            return [], 0
-            
-        try:
-            cursor = connection.cursor(dictionary=True)
-            
-            # Get total count
-            cursor.execute("SELECT COUNT(*) as total FROM transactions")
-            total_count = cursor.fetchone()['total']
-            
-            # Calculate offset
-            offset = (page - 1) * per_page
-            
-            # Build ORDER BY clause based on sort_by parameter
-            order_clause = self._build_order_clause(sort_by)
-            
-            # Get paginated data
-            cursor.execute(f"""
-                SELECT date, page_number as page, batch_number as batch, time, amount, type, 
-                       claw_machine as 'Claw Machine', from_address as 'from', 
-                       to_address as 'to', name, price
-                FROM transactions 
-                {order_clause}
-                LIMIT %s OFFSET %s
-            """, (per_page, offset))
-            
-            transactions = cursor.fetchall()
-            return transactions, total_count
-            
-        except Error as e:
-            print(f"Error getting paginated transactions: {e}")
-            return [], 0
-        finally:
-            if connection.is_connected():
-                cursor.close()
-                connection.close()
-
-    def _build_order_clause(self, sort_by):
-        """Build ORDER BY clause based on sort parameter"""
-        sort_mapping = {
-            'date-desc': 'ORDER BY date DESC, time DESC',
-            'date-asc': 'ORDER BY date ASC, time ASC',
-            'name-asc': 'ORDER BY name ASC',
-            'name-desc': 'ORDER BY name DESC',
-            'price-desc': 'ORDER BY price DESC',
-            'price-asc': 'ORDER BY price ASC',
-            'transactions-desc': 'ORDER BY (SELECT COUNT(*) FROM transactions t2 WHERE t2.name = transactions.name) DESC, name ASC',
-            'transactions-asc': 'ORDER BY (SELECT COUNT(*) FROM transactions t2 WHERE t2.name = transactions.name) ASC, name ASC'
-        }
-        return sort_mapping.get(sort_by, 'ORDER BY date DESC, time DESC')
-
     def get_unique_values(self, column):
         """Get unique values for a specific column"""
         connection = self.get_connection()

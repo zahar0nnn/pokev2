@@ -7,12 +7,30 @@ This project scrapes transaction data from the Phygitals API and stores it in a 
 - **Web Scraping**: Scrapes transaction data from Phygitals API with multiprocessing support
 - **MySQL Database**: Stores data in a structured MySQL database with proper indexing
 - **Web Interface**: Flask-based web application with filtering and price history charts
+- **Server-Side Pagination**: Fast, scalable pagination with 25-200 items per page
+- **Server-Side Sorting**: Efficient sorting in MySQL database
 - **Docker Support**: Complete Docker Compose setup for easy deployment
 - **Resume Functionality**: Can resume scraping from where it left off
 - **Data Deduplication**: Automatically removes duplicate transactions
+- **Performance Optimized**: Low memory usage, fast loading even with millions of records
 
 ## Quick Start with Docker
 
+### Windows PowerShell:
+1. **Start the services**:
+   ```powershell
+   .\update_docker.ps1
+   ```
+
+2. **Access the web application**:
+   - Open http://localhost:5001 in your browser
+
+3. **Run the scraper** (optional):
+   ```powershell
+   docker-compose run scraper python scraper.py
+   ```
+
+### Linux/Mac:
 1. **Start the services**:
    ```bash
    docker-compose up -d
@@ -25,6 +43,35 @@ This project scrapes transaction data from the Phygitals API and stores it in a 
    ```bash
    docker-compose run scraper python scraper.py
    ```
+
+## Local Development (without Docker)
+
+### Windows PowerShell:
+```powershell
+.\start_local.ps1
+```
+
+### Linux/Mac:
+```bash
+pip install -r requirements.txt
+python app.py
+```
+
+## Pagination Features
+
+The web interface now includes server-side pagination for optimal performance:
+
+- **Configurable Page Size**: Choose between 25, 50, 100, or 200 items per page
+- **Server-Side Sorting**: Sort by date, name, price, or transaction count
+- **Fast Navigation**: First/Previous/Next/Last buttons with page numbers
+- **Memory Efficient**: Only loads current page data, not all records
+- **Scalable**: Works efficiently with millions of records
+
+### API Endpoints
+
+- `GET /api/data?page=1&per_page=50&sort_by=date-desc` - Get paginated data
+- `GET /api/filters` - Get filter options
+- `GET /api/price_history/<item_name>` - Get price history for specific item
 
 ## Manual Setup
 

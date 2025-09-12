@@ -4,11 +4,8 @@ import csv
 from datetime import datetime
 import os
 from database_config import DatabaseConfig
-from flask_cors import CORS
-
 
 app = Flask(__name__)
-CORS(app)
 
 # Initialize database connection
 db = DatabaseConfig()
@@ -150,31 +147,9 @@ def debug():
 
 @app.route('/api/data')
 def api_data():
-    """API endpoint to get paginated data"""
-    page = request.args.get('page', 1, type=int)
-    per_page = request.args.get('per_page', 50, type=int)
-    sort_by = request.args.get('sort_by', 'date-desc')
-    
-    # Validate parameters
-    page = max(1, page)
-    per_page = min(max(1, per_page), 1000)  # Max 1000 items per page
-    
-    try:
-        data, total_count = db.get_transactions_paginated(page, per_page, sort_by)
-        return jsonify({
-            'data': data,
-            'pagination': {
-                'page': page,
-                'per_page': per_page,
-                'total_count': total_count,
-                'total_pages': (total_count + per_page - 1) // per_page,
-                'has_next': page * per_page < total_count,
-                'has_prev': page > 1
-            }
-        })
-    except Exception as e:
-        print(f"Error loading paginated data: {e}")
-        return jsonify({'data': [], 'pagination': {'page': 1, 'per_page': per_page, 'total_count': 0, 'total_pages': 0, 'has_next': False, 'has_prev': False}})
+    """API endpoint to get all data"""
+    data = load_data()
+    return jsonify(data)
 
 @app.route('/api/filters')
 def api_filters():

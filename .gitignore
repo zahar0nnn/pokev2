@@ -48,3 +48,4 @@ scraped_data*.csv
 
 # Docker
 .dockerignore
+.vercel

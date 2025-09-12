@@ -616,14 +616,6 @@
                     <option value="transactions-desc">Transaction Count (High to Low)</option>
                     <option value="transactions-asc">Transaction Count (Low to High)</option>
                 </select>
-                
-                <label for="perPage" style="margin-left: 20px;">Items per page:</label>
-                <select id="perPage" onchange="changePerPage()">
-                    <option value="25">25</option>
-                    <option value="50" selected>50</option>
-                    <option value="100">100</option>
-                    <option value="200">200</option>
-                </select>
             </div>
             <div class="table-container">
                 <table id="dataTable">
@@ -644,40 +636,6 @@
                         </tr>
                     </tbody>
                 </table>
-            </div>
-            
-            <!-- Pagination Controls -->
-            <div class="pagination-container" style="
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                padding: 20px;
-                background: rgba(255, 255, 255, 0.03);
-                border-top: 1px solid rgba(255, 255, 255, 0.1);
-            ">
-                <div class="pagination-info" style="color: #e0e0e0; font-family: 'JetBrains Mono', monospace;">
-                    Showing <span id="showingStart">0</span> to <span id="showingEnd">0</span> of <span id="totalCount">0</span> entries
-                </div>
-                
-                <div class="pagination-controls" style="display: flex; gap: 10px; align-items: center;">
-                    <button id="firstPage" onclick="goToPage(1)" class="btn btn-secondary" disabled>
-                        ⏮️ First
-                    </button>
-                    <button id="prevPage" onclick="goToPreviousPage()" class="btn btn-secondary" disabled>
-                        ⏪ Previous
-                    </button>
-                    
-                    <div class="page-numbers" style="display: flex; gap: 5px;">
-                        <!-- Page numbers will be generated here -->
-                    </div>
-                    
-                    <button id="nextPage" onclick="goToNextPage()" class="btn btn-secondary" disabled>
-                        Next ⏩
-                    </button>
-                    <button id="lastPage" onclick="goToLastPage()" class="btn btn-secondary" disabled>
-                        Last ⏭️
-                    </button>
-                </div>
             </div>
         </div>
     </div>
@@ -817,13 +775,9 @@
     </div>
 
     <script>
-        let currentData = [];
-        let currentPage = 1;
-        let perPage = 50;
-        let totalCount = 0;
-        let totalPages = 0;
+        let allData = [];
+        let filteredData = [];
         let priceChart = null;
-        let currentFilters = {};
 
         // Load data on page load
         window.onload = function() {
@@ -831,34 +785,17 @@
             loadFilters();
         };
 
-        async function loadData(page = 1, sortBy = null) {
+        async function loadData() {
             try {
-                showLoading();
-                
-                // Use current sort if not specified
-                if (!sortBy) {
-                    sortBy = document.getElementById('sortBy').value;
-                }
-                
-                const response = await fetch(`/api/data?page=${page}&per_page=${perPage}&sort_by=${sortBy}`);
-                const result = await response.json();
-                
-                currentData = result.data || [];
-                currentPage = result.pagination.page;
-                totalCount = result.pagination.total_count;
-                totalPages = result.pagination.total_pages;
-                
+                const response = await fetch('/api/data');
+                allData = await response.json();
+                filteredData = [...allData];
                 updateTable();
                 updateStats();
-                updatePagination();
             } catch (error) {
                 console.error('Error loading data:', error);
                 document.getElementById('tableBody').innerHTML = '<tr><td colspan="7" class="no-data">Error loading data</td></tr>';
             }
-        }
-
-        function showLoading() {
-            document.getElementById('tableBody').innerHTML = '<tr><td colspan="7" class="loading">Loading data...</td></tr>';
         }
 
         async function loadFilters() {
@@ -895,7 +832,7 @@
             });
         }
 
-        async function applyFilters() {
+        function applyFilters() {
             const type = document.getElementById('typeFilter').value;
             const clawMachine = document.getElementById('clawFilter').value;
             const from = document.getElementById('fromFilter').value;
@@ -906,25 +843,24 @@
             const minPrice = document.getElementById('minPrice').value;
             const maxPrice = document.getElementById('maxPrice').value;
 
-            // Store current filters
-            currentFilters = {
-                type: type,
-                claw_machine: clawMachine,
-                from_address: from,
-                to_address: to,
-                name: name,
-                from_address_text: fromAddress,
-                to_address_text: toAddress,
-                min_price: minPrice,
-                max_price: maxPrice
-            };
+            filteredData = allData.filter(item => {
+                if (type && item.type !== type) return false;
+                if (clawMachine && item['Claw Machine'] !== clawMachine) return false;
+                if (from && item.from !== from) return false;
+                if (to && item.to !== to) return false;
+                if (name && !item.name.toLowerCase().includes(name.toLowerCase())) return false;
+                if (fromAddress && !item.from.toLowerCase().includes(fromAddress.toLowerCase())) return false;
+                if (toAddress && !item.to.toLowerCase().includes(toAddress.toLowerCase())) return false;
+                if (minPrice && item.price < parseFloat(minPrice)) return false;
+                if (maxPrice && item.price > parseFloat(maxPrice)) return false;
+                return true;
+            });
 
-            // Reset to first page when applying filters
-            currentPage = 1;
-            await loadData(1);
+            updateTable();
+            updateStats();
         }
 
-        async function clearFilters() {
+        function clearFilters() {
             document.getElementById('typeFilter').value = '';
             document.getElementById('clawFilter').value = '';
             document.getElementById('fromFilter').value = '';
@@ -935,94 +871,20 @@
             document.getElementById('minPrice').value = '';
             document.getElementById('maxPrice').value = '';
             
-            currentFilters = {};
-            currentPage = 1;
-            await loadData(1);
-        }
-
-        // Pagination functions
-        function goToPage(page) {
-            if (page >= 1 && page <= totalPages) {
-                loadData(page);
-            }
-        }
-
-        function goToNextPage() {
-            if (currentPage < totalPages) {
-                goToPage(currentPage + 1);
-            }
-        }
-
-        function goToPreviousPage() {
-            if (currentPage > 1) {
-                goToPage(currentPage - 1);
-            }
-        }
-
-        function goToFirstPage() {
-            goToPage(1);
-        }
-
-        function goToLastPage() {
-            goToPage(totalPages);
-        }
-
-        function changePerPage() {
-            perPage = parseInt(document.getElementById('perPage').value);
-            currentPage = 1;
-            loadData(1);
-        }
-
-        function updatePagination() {
-            // Update pagination info
-            const start = (currentPage - 1) * perPage + 1;
-            const end = Math.min(currentPage * perPage, totalCount);
-            
-            document.getElementById('showingStart').textContent = start;
-            document.getElementById('showingEnd').textContent = end;
-            document.getElementById('totalCount').textContent = totalCount;
-
-            // Update pagination buttons
-            document.getElementById('firstPage').disabled = currentPage === 1;
-            document.getElementById('prevPage').disabled = currentPage === 1;
-            document.getElementById('nextPage').disabled = currentPage === totalPages;
-            document.getElementById('lastPage').disabled = currentPage === totalPages;
-
-            // Generate page numbers
-            generatePageNumbers();
-        }
-
-        function generatePageNumbers() {
-            const pageNumbersDiv = document.querySelector('.page-numbers');
-            pageNumbersDiv.innerHTML = '';
-
-            const maxVisiblePages = 5;
-            let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
-            let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
-
-            if (endPage - startPage + 1 < maxVisiblePages) {
-                startPage = Math.max(1, endPage - maxVisiblePages + 1);
-            }
-
-            for (let i = startPage; i <= endPage; i++) {
-                const pageButton = document.createElement('button');
-                pageButton.textContent = i;
-                pageButton.className = i === currentPage ? 'btn' : 'btn btn-secondary';
-                pageButton.onclick = () => goToPage(i);
-                pageButton.style.minWidth = '40px';
-                pageNumbersDiv.appendChild(pageButton);
-            }
+            filteredData = [...allData];
+            updateTable();
+            updateStats();
         }
 
         function updateTable() {
             const tbody = document.getElementById('tableBody');
             
-            if (currentData.length === 0) {
+            if (filteredData.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="7" class="no-data">No data found</td></tr>';
                 return;
             }
 
-            tbody.innerHTML = currentData.map(item => `
+            tbody.innerHTML = filteredData.map(item => `
                 <tr class="clickable-row" onclick="showPriceChart('${item.name.replace(/'/g, "\\'")}')">
                     <td>${formatDate(item.time)}</td>
                     <td>${item.name || 'N/A'}</td>
@@ -1037,18 +899,18 @@
 
         function updateStats() {
             // Ensure we have valid data
-            if (!Array.isArray(currentData)) {
-                console.error('currentData is not an array:', currentData);
+            if (!Array.isArray(filteredData)) {
+                console.error('filteredData is not an array:', filteredData);
                 return;
             }
             
-            const totalItems = parseInt(currentData.length) || 0;
-            const totalValue = currentData.reduce((sum, item) => sum + (parseFloat(item.price) || 0), 0);
+            const totalItems = parseInt(filteredData.length) || 0;
+            const totalValue = filteredData.reduce((sum, item) => sum + (parseFloat(item.price) || 0), 0);
             const avgPrice = totalItems > 0 ? totalValue / totalItems : 0;
-            const clawMachineCount = parseInt(currentData.filter(item => item['Claw Machine'] === 'Claw Machine').length) || 0;
+            const clawMachineCount = parseInt(filteredData.filter(item => item['Claw Machine'] === 'Claw Machine').length) || 0;
             
             // Calculate unique items
-            const uniqueItems = new Set(currentData.map(item => item.name || 'Unknown')).size;
+            const uniqueItems = new Set(filteredData.map(item => item.name || 'Unknown')).size;
             
             // Total transactions is the same as total items (each row is a transaction)
             const totalTransactions = totalItems;
@@ -1061,13 +923,76 @@
             document.getElementById('totalTransactions').textContent = totalTransactions.toLocaleString();
         }
 
-        async function sortData() {
+        function sortData() {
             const sortBy = document.getElementById('sortBy').value;
             console.log('Sorting by:', sortBy);
             
-            // Reset to first page when sorting
-            currentPage = 1;
-            await loadData(1, sortBy);
+            if (!Array.isArray(filteredData)) {
+                console.error('filteredData is not an array');
+                return;
+            }
+            
+            // Create a copy of the data to avoid modifying the original
+            const sortedData = [...filteredData];
+            
+            switch(sortBy) {
+                case 'date-desc':
+                    sortedData.sort((a, b) => new Date(b.time) - new Date(a.time));
+                    break;
+                case 'date-asc':
+                    sortedData.sort((a, b) => new Date(a.time) - new Date(b.time));
+                    break;
+                case 'name-asc':
+                    sortedData.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+                    break;
+                case 'name-desc':
+                    sortedData.sort((a, b) => (b.name || '').localeCompare(a.name || ''));
+                    break;
+                case 'price-desc':
+                    sortedData.sort((a, b) => (parseFloat(b.price) || 0) - (parseFloat(a.price) || 0));
+                    break;
+                case 'price-asc':
+                    sortedData.sort((a, b) => (parseFloat(a.price) || 0) - (parseFloat(b.price) || 0));
+                    break;
+                case 'transactions-desc':
+                    // Count transactions per item name
+                    const transactionCounts = {};
+                    sortedData.forEach(item => {
+                        const name = item.name || 'Unknown';
+                        transactionCounts[name] = (transactionCounts[name] || 0) + 1;
+                    });
+                    sortedData.sort((a, b) => {
+                        const countA = transactionCounts[a.name || 'Unknown'] || 0;
+                        const countB = transactionCounts[b.name || 'Unknown'] || 0;
+                        return countB - countA;
+                    });
+                    break;
+                case 'transactions-asc':
+                    // Count transactions per item name
+                    const transactionCountsAsc = {};
+                    sortedData.forEach(item => {
+                        const name = item.name || 'Unknown';
+                        transactionCountsAsc[name] = (transactionCountsAsc[name] || 0) + 1;
+                    });
+                    sortedData.sort((a, b) => {
+                        const countA = transactionCountsAsc[a.name || 'Unknown'] || 0;
+                        const countB = transactionCountsAsc[b.name || 'Unknown'] || 0;
+                        return countA - countB;
+                    });
+                    break;
+                default:
+                    console.log('Unknown sort option:', sortBy);
+                    return;
+            }
+            
+            // Update the filteredData with sorted data
+            filteredData = sortedData;
+            
+            // Update the table and stats
+            updateTable();
+            updateStats();
+            
+            console.log('Data sorted successfully');
         }
 
         function formatDate(timeString) {
