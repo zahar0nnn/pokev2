@@ -35,7 +35,8 @@ class DatabaseConfig:
                 host=self.host,
                 port=self.port,
                 user=self.user,
-                password=self.password
+                password=self.password,
+                autocommit=True
             )
             cursor = connection.cursor()
             
@@ -43,13 +44,13 @@ class DatabaseConfig:
             cursor.execute(f"CREATE DATABASE IF NOT EXISTS {self.database}")
             cursor.execute(f"USE {self.database}")
             
-            # Create transactions table
+            # Create transactions table with proper schema
             create_table_query = """
             CREATE TABLE IF NOT EXISTS transactions (
                 id INT AUTO_INCREMENT PRIMARY KEY,
-                date VARCHAR(255),  -- Primary date field for ordering
-                page_number INT,    -- Keep for reference but not primary
-                batch_number INT,   -- Date-based batch number
+                date DATETIME,  -- Primary date field for ordering
+                page_number INT,
+                batch_number INT,
                 time VARCHAR(255),  -- Keep for compatibility
                 amount VARCHAR(255),
                 type VARCHAR(255),
@@ -60,8 +61,11 @@ class DatabaseConfig:
                 price DECIMAL(10,2),
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 UNIQUE KEY unique_transaction (time, amount, type),
-                INDEX idx_date (date),  -- Index for date-based queries
-                INDEX idx_time (time)   -- Index for time-based queries
+                INDEX idx_date (date),
+                INDEX idx_page_number (page_number),
+                INDEX idx_batch_number (batch_number),
+                INDEX idx_time (time),
+                INDEX idx_created_at (created_at)
             )
             """
             cursor.execute(create_table_query)
@@ -73,8 +77,22 @@ class DatabaseConfig:
             
             if 'date' not in column_names:
                 print("📝 Adding date column to existing transactions table...")
-                cursor.execute("ALTER TABLE transactions ADD COLUMN date VARCHAR(255)")
-                print("✅ Date column added to existing table")
+                try:
+                    cursor.execute("ALTER TABLE transactions ADD COLUMN date DATETIME AFTER id")
+                    print("✅ Date column added to existing table")
+                except Error as e:
+                    if "Duplicate column name" not in str(e):
+                        print(f"⚠️  Could not add date column: {e}")
+            
+            # Check if batch_number column exists, if not add it
+            if 'batch_number' not in column_names:
+                print("📝 Adding batch_number column to existing transactions table...")
+                try:
+                    cursor.execute("ALTER TABLE transactions ADD COLUMN batch_number INT AFTER page_number")
+                    print("✅ Batch number column added to existing table")
+                except Error as e:
+                    if "Duplicate column name" not in str(e):
+                        print(f"⚠️  Could not add batch_number column: {e}")
             
             # Check if indexes exist, if not add them
             cursor.execute("SHOW INDEX FROM transactions")
@@ -82,14 +100,20 @@ class DatabaseConfig:
             index_names = [idx[2] for idx in indexes]
             
             if 'idx_date' not in index_names:
-                print("📝 Adding date index...")
-                cursor.execute("CREATE INDEX idx_date ON transactions (date)")
-                print("✅ Date index added")
+                try:
+                    print("📝 Adding date index...")
+                    cursor.execute("CREATE INDEX idx_date ON transactions (date)")
+                    print("✅ Date index added")
+                except Error as e:
+                    print(f"⚠️  Could not add date index: {e}")
             
             if 'idx_time' not in index_names:
-                print("📝 Adding time index...")
-                cursor.execute("CREATE INDEX idx_time ON transactions (time)")
-                print("✅ Time index added")
+                try:
+                    print("📝 Adding time index...")
+                    cursor.execute("CREATE INDEX idx_time ON transactions (time)")
+                    print("✅ Time index added")
+                except Error as e:
+                    print(f"⚠️  Could not add time index: {e}")
             
             # Create scraped_pages table for tracking progress
             create_pages_table = """
@@ -101,10 +125,10 @@ class DatabaseConfig:
             cursor.execute(create_pages_table)
             
             connection.commit()
-            print(f"Database '{self.database}' and tables created successfully")
+            print(f"✅ Database '{self.database}' and tables created successfully")
             
         except Error as e:
-            print(f"Error creating database: {e}")
+            print(f"❌ Error creating database: {e}")
             # Check if it's a connection error
             if "Can't connect to MySQL server" in str(e):
                 print("❌ MySQL server is not running or not accessible.")
