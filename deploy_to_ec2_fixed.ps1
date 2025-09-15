@@ -1,5 +1,5 @@
 # Deploy optimized Phygitals scraper to EC2
-# Usage: .\deploy_to_ec2.ps1 -EC2IP "your-ec2-ip" -Username "ubuntu"
+# Usage: .\deploy_to_ec2_fixed.ps1 -EC2IP "your-ec2-ip" -Username "ubuntu"
 
 param(
     [Parameter(Mandatory=$true)]
@@ -49,21 +49,21 @@ ssh $Username@$EC2IP "cd $RemoteDir; mkdir -p $backupDir; cp -r . $backupDir/ 2>
 
 # Copy optimized files to EC2
 Write-Host "📤 Copying optimized files..." -ForegroundColor Yellow
-scp database.py $Username@$EC2IP`:$RemoteDir/
-scp scraper.py $Username@$EC2IP`:$RemoteDir/
-scp app.py $Username@$EC2IP`:$RemoteDir/
-scp monitor.py $Username@$EC2IP`:$RemoteDir/
-scp start.ps1 $Username@$EC2IP`:$RemoteDir/
-scp docker-compose.yaml $Username@$EC2IP`:$RemoteDir/
-scp Dockerfile.scraper $Username@$EC2IP`:$RemoteDir/
-scp Dockerfile.webapp $Username@$EC2IP`:$RemoteDir/
-scp requirements.txt $Username@$EC2IP`:$RemoteDir/
-scp README.md $Username@$EC2IP`:$RemoteDir/
+scp database.py "${Username}@${EC2IP}:${RemoteDir}/"
+scp scraper.py "${Username}@${EC2IP}:${RemoteDir}/"
+scp app.py "${Username}@${EC2IP}:${RemoteDir}/"
+scp monitor.py "${Username}@${EC2IP}:${RemoteDir}/"
+scp start.ps1 "${Username}@${EC2IP}:${RemoteDir}/"
+scp docker-compose.yaml "${Username}@${EC2IP}:${RemoteDir}/"
+scp Dockerfile.scraper "${Username}@${EC2IP}:${RemoteDir}/"
+scp Dockerfile.webapp "${Username}@${EC2IP}:${RemoteDir}/"
+scp requirements.txt "${Username}@${EC2IP}:${RemoteDir}/"
+scp README.md "${Username}@${EC2IP}:${RemoteDir}/"
 
 # Copy templates directory if it exists
 if (Test-Path "templates") {
     Write-Host "📤 Copying templates directory..." -ForegroundColor Yellow
-    scp -r templates $Username@$EC2IP`:$RemoteDir/
+    scp -r templates "${Username}@${EC2IP}:${RemoteDir}/"
 }
 
 # Set proper permissions
