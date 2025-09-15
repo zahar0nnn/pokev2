@@ -151,8 +151,12 @@ def get_price_history(item_name):
                     logger.warning(f"⚠️  Invalid price data: {e}")
                     continue
         
-        # Sort by time
-        price_data.sort(key=lambda x: x['time'])
+        # Sort by time (handle both string and datetime objects)
+        try:
+            price_data.sort(key=lambda x: x['time'])
+        except TypeError:
+            # If time is not comparable, convert to datetime first
+            price_data.sort(key=lambda x: datetime.fromisoformat(x['time'].replace('Z', '+00:00')) if isinstance(x['time'], str) else x['time'])
         
         return jsonify(price_data)
         

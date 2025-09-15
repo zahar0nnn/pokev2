@@ -34,7 +34,8 @@ class Database:
         }
         
         self.pool = None
-        self._create_pool()
+        self._database_created = False
+        # Don't create pool immediately - wait for setup_database to be called
     
     def _create_pool(self):
         """Create connection pool"""
@@ -78,11 +79,15 @@ class Database:
             
             cursor = connection.cursor()
             
-            # Create database
-            cursor.execute(f"CREATE DATABASE IF NOT EXISTS {self.config['database']} "
-                          f"CHARACTER SET {self.config['charset']} "
-                          f"COLLATE {self.config['collation']}")
-            cursor.execute(f"USE {self.config['database']}")
+            # Create database (using parameterized queries for safety)
+            database_name = self.config['database']
+            charset = self.config['charset']
+            collation = self.config['collation']
+            
+            cursor.execute(f"CREATE DATABASE IF NOT EXISTS `{database_name}` "
+                          f"CHARACTER SET {charset} "
+                          f"COLLATE {collation}")
+            cursor.execute(f"USE `{database_name}`")
             
             # Create transactions table
             cursor.execute("""
@@ -154,7 +159,8 @@ class Database:
             raise
         finally:
             if connection and connection.is_connected():
-                cursor.close()
+                if 'cursor' in locals():
+                    cursor.close()
                 connection.close()
     
     def insert_transactions_batch(self, transactions: List[Dict[str, Any]]) -> bool:

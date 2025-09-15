@@ -242,7 +242,7 @@ class PhygitalsScraper:
         
         finally:
             # Save remaining transactions
-            if batch_transactions:
+            if batch_transactions and not self.shutdown_requested:
                 logger.info(f"💾 Saving final batch of {len(batch_transactions)} transactions...")
                 self.db.insert_transactions_batch(batch_transactions)
             

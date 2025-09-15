@@ -78,16 +78,23 @@ class Monitor:
         try:
             response = requests.get("http://localhost:5001/debug", timeout=5)
             if response.status_code == 200:
-                data = response.json()
-                logger.info("✅ Web app is running")
-                logger.info(f"  Status: {data.get('status', 'Unknown')}")
-                logger.info(f"  Database: {data.get('database', 'Unknown')}")
-                return True
+                try:
+                    data = response.json()
+                    logger.info("✅ Web app is running")
+                    logger.info(f"  Status: {data.get('status', 'Unknown')}")
+                    logger.info(f"  Database: {data.get('database', 'Unknown')}")
+                    return True
+                except (ValueError, KeyError) as e:
+                    logger.warning(f"⚠️  Web app returned invalid JSON: {e}")
+                    return False
             else:
                 logger.warning(f"⚠️  Web app returned status {response.status_code}")
                 return False
-        except Exception as e:
+        except requests.exceptions.RequestException as e:
             logger.error(f"❌ Web app not accessible: {e}")
+            return False
+        except Exception as e:
+            logger.error(f"❌ Unexpected error checking webapp: {e}")
             return False
     
     def run_health_check(self) -> bool:
