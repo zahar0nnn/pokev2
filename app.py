@@ -52,10 +52,12 @@ def get_data():
         
         return jsonify({
             'data': transactions,
-            'total': total_count,
-            'page': page,
-            'per_page': per_page,
-            'pages': (total_count + per_page - 1) // per_page
+            'pagination': {
+                'page': page,
+                'per_page': per_page,
+                'total_count': total_count,
+                'total_pages': (total_count + per_page - 1) // per_page
+            }
         })
         
     except (ValueError, TypeError) as e:
@@ -96,10 +98,12 @@ def search_data():
         
         return jsonify({
             'data': transactions,
-            'total': total_count,
-            'page': page,
-            'per_page': per_page,
-            'pages': (total_count + per_page - 1) // per_page
+            'pagination': {
+                'page': page,
+                'per_page': per_page,
+                'total_count': total_count,
+                'total_pages': (total_count + per_page - 1) // per_page
+            }
         })
         
     except (ValueError, TypeError) as e:
@@ -119,7 +123,9 @@ def get_filters():
         filters = {
             'types': db.get_unique_values('transaction_type'),
             'claw_machines': db.get_unique_values('claw_machine'),
-            'names': db.get_unique_values('item_name')[:100]  # Limit names to 100
+            'names': db.get_unique_values('item_name')[:100],  # Limit names to 100
+            'from_addresses': db.get_unique_values('from_address')[:100],
+            'to_addresses': db.get_unique_values('to_address')[:100]
         }
         
         return jsonify(filters)
