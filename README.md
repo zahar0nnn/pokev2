@@ -1,48 +1,50 @@
-# Phygitals Scraper with MySQL and Docker
+# Phygitals Scraper - Optimized & Reliable
 
-This project scrapes transaction data from the Phygitals API and stores it in a MySQL database, with a web interface for viewing and filtering the data.
+A high-performance scraper for Phygitals marketplace data with MySQL storage and web interface.
 
 ## Features
 
-- **Web Scraping**: Scrapes transaction data from Phygitals API with multiprocessing support
-- **MySQL Database**: Stores data in a structured MySQL database with proper indexing
-- **Web Interface**: Flask-based web application with filtering and price history charts
-- **Server-Side Pagination**: Fast, scalable pagination with 25-200 items per page
-- **Server-Side Sorting**: Efficient sorting in MySQL database
+- **Optimized Scraping**: High-performance scraper with retry logic and error recovery
+- **Advanced Database**: MySQL with connection pooling, proper indexing, and statistics
+- **Modern Web Interface**: Flask-based web application with filtering, charts, and pagination
 - **Docker Support**: Complete Docker Compose setup for easy deployment
-- **Resume Functionality**: Can resume scraping from where it left off
-- **Data Deduplication**: Automatically removes duplicate transactions
-- **Performance Optimized**: Low memory usage, fast loading even with millions of records
+- **Progress Tracking**: Real-time progress monitoring with JSON and database stats
+- **Robust Error Handling**: Graceful error recovery and logging
+- **Easy Setup**: Simple installation and startup process
 
-## Quick Start with Docker
+## Quick Start
 
-### Windows PowerShell:
-1. **Start the services**:
+### Option 1: Local Setup (Recommended) ⭐
+1. **Install Python 3.9+** if not already installed
+2. **Run the optimized setup**:
    ```powershell
-   .\update_docker.ps1
+   # Windows PowerShell
+   .\start.ps1
    ```
-
-2. **Access the web application**:
+   ```bash
+   # Linux/Mac
+   python3 scraper.py
+   ```
+3. **Start the web app** (in another terminal):
+   ```bash
+   python3 app.py
+   ```
+4. **Access the web application**:
    - Open http://localhost:5001 in your browser
 
-3. **Run the scraper** (optional):
-   ```powershell
-   docker-compose run scraper python scraper.py
-   ```
-
-### Linux/Mac:
+### Option 2: Docker Setup
 1. **Start the services**:
    ```bash
    docker-compose up -d
    ```
 
-2. **Access the web application**:
-   - Open http://localhost:5001 in your browser
-
-3. **Run the scraper** (optional):
+2. **Run the scraper**:
    ```bash
-   docker-compose run scraper python scraper.py
+   docker-compose run scraper
    ```
+
+3. **Access the web application**:
+   - Open http://localhost:5001 in your browser
 
 ## Local Development (without Docker)
 
@@ -159,12 +161,40 @@ The database connection can be configured using environment variables:
 - **scraper**: Python scraper application
 - **webapp**: Flask web application
 
+## Monitoring
+
+### Check Scraper Status
+```bash
+# Optimized version
+python monitor.py
+```
+
+### Check Database
+```bash
+# Connect to MySQL
+mysql -h localhost -u root -p
+
+# Check records
+USE phygitals_data;
+SELECT COUNT(*) FROM transactions;
+SELECT MAX(transaction_time) FROM transactions;
+```
+
+### Check Web App
+```bash
+# Test web app
+curl http://localhost:5001/debug
+
+# Check logs
+docker logs phygitals-webapp
+```
+
 ## Troubleshooting
 
-1. **MySQL connection issues**:
+1. **Database connection issues**:
    - Check if MySQL is running
-   - Verify connection credentials
-   - Run `python test_mysql.py` to test connection
+   - Verify connection credentials in environment variables
+   - Run `python monitor.py` to test connection
 
 2. **Web app not loading data**:
    - Check if data exists in the database
@@ -175,21 +205,22 @@ The database connection can be configured using environment variables:
    - Check internet connection
    - Verify API endpoint is accessible
    - Check for rate limiting
+   - Run `python monitor.py` to see status
 
 ## File Structure
 
 ```
-├── app.py                 # Flask web application
-├── scraper.py            # Main scraper script
-├── database_config.py    # MySQL database configuration
+├── app.py                 # Optimized Flask web application
+├── scraper.py            # Optimized scraper script
+├── database.py           # Optimized MySQL database layer
+├── monitor.py            # Monitoring and health check script
+├── start.ps1             # Windows startup script
 ├── docker-compose.yaml   # Docker Compose configuration
 ├── Dockerfile.scraper    # Scraper Docker image
 ├── Dockerfile.webapp     # Web app Docker image
-├── init.sql             # Database initialization
-├── requirements.txt     # Python dependencies
-├── test_mysql.py       # MySQL connection test
+├── requirements.txt      # Python dependencies
 └── templates/
-    └── index.html      # Web interface template
+    └── index.html        # Web interface template
 ```
 
 ## License

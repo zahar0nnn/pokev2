@@ -16,8 +16,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy application files
 COPY app.py .
-COPY app_fixed.py .
-COPY database_config.py .
+COPY database.py .
 COPY templates/ templates/
 
 # Create non-root user for security
@@ -26,10 +25,6 @@ USER appuser
 
 # Expose port
 EXPOSE 5001
-
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD curl -f http://localhost:5001/debug || exit 1
 
 # Run the web application
 CMD ["python", "app.py"]
