@@ -161,42 +161,47 @@ class PhygitalsScraper:
         
         # Get already scraped pages
         scraped_pages = self.db.get_scraped_pages()
-        logger.info(f"📋 Found {len(scraped_pages)} already scraped pages")
+        logger.info(f"   Found {len(scraped_pages)} already scraped pages")
         
         total_records = 0
         batch_transactions = []
         batch_size = 100  # Save every 100 transactions
         consecutive_errors = 0
-        max_consecutive_errors = 5
+        max_consecutive_errors = 50  # Increased from 5 to 50
+        empty_page_gap = 0
+        max_empty_gap = 100  # Allow up to 100 consecutive empty pages
         
         try:
             for page_num in range(start_page, max_pages + 1):
                 # Check for shutdown signal
                 if self.shutdown_requested:
-                    logger.info("🛑 Shutdown requested, stopping...")
+                    logger.info("   Shutdown requested, stopping...")
                     break
                 
                 # Skip if already scraped
                 if page_num in scraped_pages:
                     logger.info(f"⏭️  Page {page_num} already scraped, skipping")
                     continue
-            
+                
                 # Scrape page
                 transactions = self.scrape_page(page_num)
                 
                 if not transactions:
                     consecutive_errors += 1
-                    logger.warning(f"⚠️  No transactions on page {page_num} (error {consecutive_errors}/{max_consecutive_errors})")
+                    empty_page_gap += 1
+                    logger.warning(f"⚠️  No transactions on page {page_num} (error {consecutive_errors}/{max_consecutive_errors}, gap: {empty_page_gap})")
                     
-                    if consecutive_errors >= max_consecutive_errors:
-                        logger.error(f"❌ Too many consecutive errors ({consecutive_errors}), stopping")
+                    # Only stop if we've hit both thresholds
+                    if consecutive_errors >= max_consecutive_errors and empty_page_gap >= max_empty_gap:
+                        logger.error(f"❌ Too many consecutive errors ({consecutive_errors}) and large empty gap ({empty_page_gap}), stopping")
                         break
                     
                     time.sleep(5)  # Wait before retrying
                     continue
-            
-                # Reset error counter on success
+                
+                # Reset error counters on success
                 consecutive_errors = 0
+                empty_page_gap = 0
                 
                 # Process transactions
                 page_records = 0
@@ -215,7 +220,7 @@ class PhygitalsScraper:
                 
                 # Save batch to database
                 if len(batch_transactions) >= batch_size:
-                    logger.info(f"💾 Saving batch of {len(batch_transactions)} transactions...")
+                    logger.info(f"   Saving batch of {len(batch_transactions)} transactions...")
                     if self.db.insert_transactions_batch(batch_transactions):
                         batch_transactions = []
                     else:
@@ -243,7 +248,7 @@ class PhygitalsScraper:
         finally:
             # Save remaining transactions
             if batch_transactions and not self.shutdown_requested:
-                logger.info(f"💾 Saving final batch of {len(batch_transactions)} transactions...")
+                logger.info(f"   Saving final batch of {len(batch_transactions)} transactions...")
                 self.db.insert_transactions_batch(batch_transactions)
             
             # Show final stats
