@@ -56,7 +56,7 @@ class PhygitalsScraper:
         logger.info("🛑 Shutdown signal received, stopping gracefully...")
         self.shutdown_requested = True
     
-    def scrape_page(self, page_num: int) -> list:
+def scrape_page(self, page_num: int) -> list:
         """Scrape a single page with retry logic"""
         max_retries = 3
         retry_delay = 2
@@ -70,7 +70,8 @@ class PhygitalsScraper:
                 response.raise_for_status()
                 
                 data = response.json()
-                transactions = data.get('data', [])
+                # Try both 'data' and 'listings' to handle API changes
+                transactions = data.get('data', []) or data.get('listings', [])
                 
                 logger.info(f"✅ Page {page_num}: Found {len(transactions)} transactions")
                 return transactions
