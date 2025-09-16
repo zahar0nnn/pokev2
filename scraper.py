@@ -42,7 +42,7 @@ class PhygitalsScraper:
         except Exception as e:
             logger.error(f"❌ Database initialization failed: {e}")
             self.db = None
-        
+    
         # Setup signal handlers for graceful shutdown
         self.shutdown_requested = False
         try:
@@ -180,7 +180,7 @@ class PhygitalsScraper:
                 if page_num in scraped_pages:
                     logger.info(f"⏭️  Page {page_num} already scraped, skipping")
                     continue
-                
+            
                 # Scrape page
                 transactions = self.scrape_page(page_num)
                 
@@ -194,7 +194,7 @@ class PhygitalsScraper:
                     
                     time.sleep(5)  # Wait before retrying
                     continue
-                
+            
                 # Reset error counter on success
                 consecutive_errors = 0
                 

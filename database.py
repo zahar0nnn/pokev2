@@ -293,15 +293,36 @@ class Database:
                 connection.close()
     
     def get_stats(self) -> Dict[str, Any]:
-        """Get scraping statistics"""
+        """Get scraping statistics - always return current actual counts"""
         connection = self.get_connection()
         if not connection:
             return {}
         
         try:
             cursor = connection.cursor(dictionary=True)
-            cursor.execute("SELECT * FROM scraping_stats WHERE id = 1")
-            return cursor.fetchone() or {}
+            
+            # Get actual current counts from the database
+            cursor.execute("SELECT COUNT(*) as total_records FROM transactions")
+            total_records = cursor.fetchone()['total_records']
+            
+            cursor.execute("SELECT COUNT(*) as total_pages FROM scraped_pages")
+            total_pages = cursor.fetchone()['total_pages']
+            
+            cursor.execute("SELECT MAX(page_number) as last_scraped_page FROM scraped_pages")
+            last_scraped_page = cursor.fetchone()['last_scraped_page'] or 0
+            
+            cursor.execute("SELECT MAX(scraped_at) as last_scraped_time FROM scraped_pages")
+            last_scraped_time = cursor.fetchone()['last_scraped_time']
+            
+            return {
+                'id': 1,
+                'total_pages': total_pages,
+                'total_records': total_records,
+                'last_scraped_page': last_scraped_page,
+                'last_scraped_time': last_scraped_time,
+                'created_at': None,
+                'updated_at': None
+            }
         except Error as e:
             logger.error(f"❌ Error getting stats: {e}")
             return {}
